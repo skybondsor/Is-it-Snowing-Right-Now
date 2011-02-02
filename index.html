@@ -1,0 +1,114 @@
+<!doctype html>
+
+<html>
+	<head>
+		<title>index</title>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		  <style type="text/css">
+		  	body { color: #222; background: #fff; text-align: center; }
+		  	h1, p { display: none; font: bold 10em/130px Helvetica, "Helvetica Neue", Arial, sans-serif; }
+		  	p#loading { display: block; }
+		  </style>
+	</head>
+
+	<body>
+		
+		<div id="container">
+	
+			<h1>Is it snowing right now?</h1>
+		
+			<div id="answers">
+			
+				<p id="no">No.</p>
+			
+				<p id="yes">Yes.</p>
+			
+				<p id="maybe">Maybe.</p>
+			
+				<p id="somewhat">Somewhat.</p>
+				
+				<p id="idk">I don't know.</p>
+				
+				<p id="loading">&hellip;</p>
+			
+			</div><!-- #answers -->
+			
+			<a href="http://deadletterenterprises.com/">This is a Dead Letter Enterprise.</a>
+			
+		</div><!-- #container -->
+		
+		<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.5.min.js"></script>
+		<script type="text/javascript">
+			var wH = $(window).height();
+			$('p').css({marginTop:(wH-130)/2+'px'});
+			$(window).resize(function(){
+				var wH = $(window).height();
+				$('p').css({marginTop:(wH-130)/2+'px'});				
+			})
+			
+			if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(success, error);
+      } else { error(message); }
+      
+      function error() {
+        Answer("idk");
+      }
+      
+      function success(position) {
+        Answer(isItSnowingRightNow(position.coords.latitude, position.coords.longitude));
+      }
+      
+      var Answer = function(answer) {
+        $("h1, p").css({ "display": "none" });
+        $("p#" + answer).css({ "display": "block" }); 
+      }
+      
+      var isItSnowingRightNow = function(lat, lng) {
+        $.ajax({  url: "weather.php", 
+                  type: "GET",
+                  dataType: "xml", 
+                  data: {
+                    why: "city",
+                    lat: lat,
+                    lng: lng
+                  },
+                  success: function(xml) {
+                    $.ajax({
+                      url: "weather.php",
+                      type: "GET",
+                      dataType: "xml",
+                      data: {
+                        why: "weather",
+                        city: $(xml).find("city:first").text() + "," + $(xml).find("state:first").text()
+                      },
+                      success: function(xml) {
+                        switch($(xml).find("conditions:first").text()) {
+                          case "Snow":
+                            Answer("yes");
+                            break;
+                          case "Chance of Flurries":
+                          case "Chance of Freezing Rain":
+                          case "Chance of Sleet":
+                          case "Chance of Snow":
+                            Answer("maybe");
+                            break;
+                          case "Flurries":
+                          case "Freezing Rain":
+                          case "Sleet":
+                            Answer("somewhat");
+                            break;
+                          default:
+                            Answer("no");
+                            break;
+                        }
+                      }
+                    });
+                  }}); 
+        
+        Answer("idk"); return;
+      }
+		</script>
+
+	</body>
+
+</html>
